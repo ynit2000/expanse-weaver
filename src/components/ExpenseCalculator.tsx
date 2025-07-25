@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import ExpenseCharts from './ExpenseCharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Edit, Plus, DollarSign, TrendingUp, Calendar, Filter } from 'lucide-react';
+import { Trash2, Edit, Plus, DollarSign, TrendingUp, Calendar, Filter, PieChart, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Expense {
@@ -321,6 +322,9 @@ const ExpenseCalculator = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Professional Expense Charts */}
+        <ExpenseCharts expenses={expenses} />
 
         {/* Category Breakdown */}
         {Object.keys(categoryTotals).length > 0 && (

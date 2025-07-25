@@ -132,7 +132,7 @@ const ExpenseCalculator = () => {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
                   <p className="text-3xl font-bold text-foreground">
-                    ${totalAmount.toFixed(2)}
+                    ₹{totalAmount.toFixed(2)}
                   </p>
                 </div>
                 <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -162,7 +162,7 @@ const ExpenseCalculator = () => {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">This Month</p>
                   <p className="text-3xl font-bold text-foreground">
-                    ${expenses.filter(exp => 
+                    ₹{expenses.filter(exp => 
                       new Date(exp.date).getMonth() === new Date().getMonth()
                     ).reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
                   </p>
@@ -187,7 +187,7 @@ const ExpenseCalculator = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Amount ($)</Label>
+                  <Label htmlFor="amount">Amount (₹)</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -287,7 +287,7 @@ const ExpenseCalculator = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-lg">${expense.amount.toFixed(2)}</span>
+                            <span className="font-semibold text-lg">₹{expense.amount.toFixed(2)}</span>
                             <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
                               {expense.category}
                             </span>
@@ -334,7 +334,7 @@ const ExpenseCalculator = () => {
                   <div key={category} className="bg-background/50 p-4 rounded-lg border border-border/50">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">{category}</span>
-                      <span className="font-semibold">${amount.toFixed(2)}</span>
+                      <span className="font-semibold">₹{amount.toFixed(2)}</span>
                     </div>
                     <div className="mt-2 bg-muted rounded-full h-2">
                       <div

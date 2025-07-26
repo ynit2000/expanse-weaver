@@ -1,28 +1,44 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-      setIsAuthenticated(loggedIn);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setIsLoading(false);
+        
+        if (!session) {
+          navigate('/login');
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
       
-      if (!loggedIn) {
+      if (!session) {
         navigate('/login');
       }
-    };
+    });
 
-    checkAuth();
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
-  if (isAuthenticated === null) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -30,7 +46,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  return isAuthenticated ? <>{children}</> : null;
+  return session ? <>{children}</> : null;
 };
 
 export default AuthGuard;

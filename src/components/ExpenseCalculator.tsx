@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Edit, Plus, DollarSign, TrendingUp, Calendar, Filter, PieChart, BarChart3 } from 'lucide-react';
+import { Trash2, Edit, Plus, DollarSign, TrendingUp, Calendar, Filter, PieChart, BarChart3, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 export interface Expense {
   id: string;
@@ -40,6 +42,32 @@ const ExpenseCalculator = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Logout Failed",
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Logged out successfully!",
+        });
+        navigate('/login');
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,13 +144,24 @@ const ExpenseCalculator = () => {
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center animate-fade-in">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-            Professional Expense Calculator
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Track and manage your expenses with precision
-          </p>
+        <div className="flex justify-between items-center animate-fade-in">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+              Professional Expense Calculator
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Track and manage your expenses with precision
+            </p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
         </div>
 
         {/* Summary Cards */}

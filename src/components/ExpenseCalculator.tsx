@@ -41,8 +41,47 @@ const ExpenseCalculator = () => {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Load expenses from Supabase on component mount
+  useEffect(() => {
+    loadExpenses();
+  }, []);
+
+  const loadExpenses = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load expenses: " + error.message,
+        });
+      } else {
+        setExpenses(data || []);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred while loading expenses",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -69,7 +108,7 @@ const ExpenseCalculator = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!form.amount || !form.category || !form.description) {
@@ -81,35 +120,83 @@ const ExpenseCalculator = () => {
       return;
     }
 
-    const expense: Expense = {
-      id: editingId || Date.now().toString(),
-      amount: parseFloat(form.amount),
-      category: form.category,
-      description: form.description,
-      date: form.date
-    };
+    try {
+      if (editingId) {
+        // Update existing expense
+        const { error } = await supabase
+          .from('expenses')
+          .update({
+            amount: parseFloat(form.amount),
+            category: form.category,
+            description: form.description,
+            date: form.date
+          })
+          .eq('id', editingId);
 
-    if (editingId) {
-      setExpenses(prev => prev.map(exp => exp.id === editingId ? expense : exp));
-      setEditingId(null);
-      toast({
-        title: "Success",
-        description: "Expense updated successfully!"
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to update expense: " + error.message,
+          });
+          return;
+        }
+
+        toast({
+          title: "Success",
+          description: "Expense updated successfully!"
+        });
+        setEditingId(null);
+      } else {
+        // Create new expense
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('expenses')
+          .insert({
+            amount: parseFloat(form.amount),
+            category: form.category,
+            description: form.description,
+            date: form.date,
+            user_id: user.id
+          });
+
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to add expense: " + error.message,
+          });
+          return;
+        }
+
+        toast({
+          title: "Success",
+          description: "Expense added successfully!"
+        });
+      }
+
+      // Reload expenses from database
+      await loadExpenses();
+      
+      // Reset form
+      setForm({
+        amount: '',
+        category: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
       });
-    } else {
-      setExpenses(prev => [...prev, expense]);
+    } catch (error) {
       toast({
-        title: "Success",
-        description: "Expense added successfully!"
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
       });
     }
-
-    setForm({
-      amount: '',
-      category: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0]
-    });
   };
 
   const handleEdit = (expense: Expense) => {
@@ -122,12 +209,36 @@ const ExpenseCalculator = () => {
     setEditingId(expense.id);
   };
 
-  const handleDelete = (id: string) => {
-    setExpenses(prev => prev.filter(exp => exp.id !== id));
-    toast({
-      title: "Success",
-      description: "Expense deleted successfully!"
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete expense: " + error.message,
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Expense deleted successfully!"
+      });
+
+      // Reload expenses from database
+      await loadExpenses();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred while deleting expense",
+      });
+    }
   };
 
   const filteredExpenses = filterCategory === 'all' 
